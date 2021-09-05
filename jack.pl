@@ -2,6 +2,28 @@
 :- use_module(library(filesex)).
 :- use_module(library(archive)).
 
+sync :-
+  setup_call_cleanup(
+    open('package.pl', read, In),
+    (
+      once(read_deps(In, Deps)),
+      writeln(Deps)
+    ),
+    close(In)
+  ).
+
+read_deps(In, Deps) :-
+  read(In, T),
+  read_deps_(T, In, [], Deps).
+
+read_deps_(end_of_file, _, Deps, Deps).
+read_deps_(dep(D), In, SoFar, Deps) :-
+  read(In, T),
+  read_deps_(T, In, [D|SoFar], Deps).
+read_deps_(_, In, SoFar, Deps) :-
+  read(In, T),
+  read_deps_(T, In, SoFar, Deps).
+
 download(URL) :-
   setup_call_cleanup(
     http_open(URL, In, []),
