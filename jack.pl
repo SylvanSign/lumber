@@ -27,22 +27,22 @@ sync :-
   ).
 
 download_deps_from_package_pl(In) :-
-  read_deps(In, Deps),
-  delete_directory_and_contents(deps),
+  findall(D, read_with_backtracking(In, dep(D)), Deps),
+  (  exists_directory(deps)
+  -> delete_directory_contents(deps)
+  ;  true
+  ),
   make_directory_path(deps),
   maplist(download_url_to_deps_directory, Deps).
 
-read_deps(In, Deps) :-
-  read(In, T),
-  once(read_deps_(T, In, [], Deps)).
-
-read_deps_(end_of_file, _, Deps, Deps).
-read_deps_(dep(D), In, SoFar, Deps) :-
-  read(In, T),
-  read_deps_(T, In, [D|SoFar], Deps).
-read_deps_(_, In, SoFar, Deps) :-
-  read(In, T),
-  read_deps_(T, In, SoFar, Deps).
+read_with_backtracking(In, Term) :-
+  repeat,
+  read(In, ReadTerm),
+  (  ReadTerm \= end_of_file
+  -> ReadTerm = Term
+  ;  !,
+     fail
+  ).
 
 download_url_to_deps_directory(URL) :-
   setup_call_cleanup(
